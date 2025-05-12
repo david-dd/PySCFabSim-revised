@@ -182,7 +182,7 @@ def run_greedy():
     p.add_argument('--days', type=int)
     p.add_argument('--dispatcher', type=str)
     p.add_argument('--seed', type=int)
-    p.add_argument('--wandb', action='store_true', default=False)
+    p.add_argument('--wandb', action='store_true', default=True)
     p.add_argument('--chart', action='store_true', default=False)
     p.add_argument('--alg', type=str, default='l4m', choices=['l4m', 'm4l'])
     p.add_argument('--WIP', type=bool, default=True)
@@ -191,9 +191,9 @@ def run_greedy():
     p.add_argument('--batch_strat', type=str, default="Max", choices=['Max', 'Min', 'RoundRobin', 'Demand']) #Max,Min, RoundRobin, Demand
     a = p.parse_args()
     seed = random.randint(1, 10000)
-    a.dataset = 'SMT2020_LVHM' #'SMT2020_HVLM'
-    a.days = 730
-    a.dispatcher = 'cr' #'fifo'
+    a.dataset = 'SMT2020_HVLM' #'SMT2020_LVHM' #'SMT2020_HVLM'
+    a.days = 7300
+    a.dispatcher = 'fifo' #'cr' #'fifo'
     a.seed = seed
     a.WIP = True 
     a.rpt_mode = False
