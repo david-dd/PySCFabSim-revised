@@ -37,8 +37,8 @@ def print_statistics(instance, days, dataset, disp, method='greedy', dir='greedy
     apt = {}
     dl = {}
 
-    # Verzeichnis anlegen, falls nicht vorhanden
-    os.makedirs(dir, exist_ok=True)
+    
+
 
     debug_data = {
         'seed': seed,
@@ -53,17 +53,19 @@ def print_statistics(instance, days, dataset, disp, method='greedy', dir='greedy
         #'instance_plugins': instance.plugins,        
         #'lots': lots,
     }
-
-    with open(f'{dir}/debug_data_{method}_{days}days_{dataset}_{disp}.pkl', 'wb') as f:
-        pickle.dump(debug_data, f)
-
+    try:
+        myfile = f'data/horse/ws/dahe839f-WsHeik/PcSCFabSim/debug_data_{method}_{days}days_{dataset}_{disp}.pkl'
+        with open(myfile, 'wb') as f:
+            pickle.dump(debug_data, f)
+    except:
+        print("Konnte Datei nicht speichern:", myfile )
 
     print("SUM_CQT_VIOLATIONS:", instance.counter_cqt_violated)
     for lot in instance.done_lots:
         if lot.release_at >= 0:
             lots[lot.name]['throughput'] += 1
         
-            if lot.release_at >= 0:#31536000:                       # Nur das letzte Jahr führt zu inkonsitenz mit dem Orginal Beitrag
+            if lot.release_at >= 31536000:                       # Nur das letzte Jahr führt zu inkonsitenz mit dem Orginal Beitrag
                 lots[lot.name]['throughput_one_year'] += 1
                 lots[lot.name]['ACT'].append(lot.done_at - lot.release_at)
                 lots[lot.name]['tardiness'] += max(0, lot.done_at - lot.deadline_at)
@@ -133,9 +135,13 @@ def print_statistics(instance, days, dataset, disp, method='greedy', dir='greedy
             machines[machine_name]['pm'] = statistics.mean(pm_times[machine_name]) / time
             machines[machine_name]['br'] = statistics.mean(br_times[machine_name]) / time
             machines[machine_name]['setup'] = statistics.mean(setup_times[machine_name]) / time
-            r = instance.lot_waiting_at_machine[machine_name]
-            if r[0] > 0 and r[1] > 0:
-                machines[machine_name]['waiting_time'] = r[1] / r[0] / 3600 / 24
+            
+            ### Heik - brauchen wir diese Zeilen?
+            #r = instance.lot_waiting_at_machine[machine_name]
+            #if r[0] > 0 and r[1] > 0:
+            #    machines[machine_name]['waiting_time'] = r[1] / r[0] / 3600 / 24
+            ### Heik Ende
+            
             print(machine_name, len(utilized_times[machine_name]),
                 round(machines[machine_name]['avail'] * 100, 2),
                 round(machines[machine_name]['util'] * 100, 2),

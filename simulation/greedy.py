@@ -192,7 +192,7 @@ def run_greedy():
     a = p.parse_args()
     seed = random.randint(1, 10000)
     a.dataset = 'SMT2020_HVLM' #'SMT2020_LVHM' #'SMT2020_HVLM'
-    a.days = 7300
+    a.days = 730
     a.dispatcher = 'fifo' #'cr' #'fifo'
     a.seed = seed
     a.WIP = True 
