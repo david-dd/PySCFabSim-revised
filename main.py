@@ -8,6 +8,7 @@ sys.path.insert(0, '.')
 
 
 def greedy():
+
     profile = False
     if profile:
         from pyinstrument import Profiler
@@ -15,17 +16,9 @@ def greedy():
         p = Profiler()
         p.start()
 
-    for i in range(30):    
-        try:
-            print("HEIK - START DURCHGANG=", i)
-            run_greedy()
-            print("HEIK - ENDE DURCHGANG=" , i)
-            print()
-        except:
-            print("HEIK - Fehler bei DURCHGANG=" , i)
-            print()
-        
-
+    run_greedy()
+    print()
+    print()
 
     if profile:
         p.stop()
