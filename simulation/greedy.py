@@ -191,9 +191,9 @@ def run_greedy():
     p.add_argument('--batch_strat', type=str, default="Max", choices=['Max', 'Min', 'RoundRobin', 'Demand']) #Max,Min, RoundRobin, Demand
     a = p.parse_args()
     seed = random.randint(1, 10000)
-    a.dataset = 'SMT2020_HVLM'
+    a.dataset = 'SMT2020_LVHM' #'SMT2020_HVLM'
     a.days = 730
-    a.dispatcher = 'fifo'
+    a.dispatcher = 'cr' #'fifo'
     a.seed = seed
     a.WIP = True 
     a.rpt_mode = False
@@ -242,7 +242,7 @@ def run_greedy():
     dispatcher = dispatcher_map[a.dispatcher]
 
     sys.stderr.write('Seed: ' + str(a.seed) + '\n')
-    sys.stderr.write('Starting simulation with dispatching rule'+ a.dispatcher +'\n\n')
+    sys.stderr.write('Starting simulation with dispatching rule '+ a.dispatcher +'\n\n')
     sys.stderr.flush()
 
     while not instance.done:

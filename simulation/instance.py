@@ -8,6 +8,8 @@ import pandas as pd
 #sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release-William-Rodmann','simulation', 'gym'))
 sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','PySCFabSim','Projekt-Reproduktion','Mai-Session', 'PySCFabSim-release','simulation'))
 sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','PySCFabSim','Projekt-Reproduktion','Mai-Session', 'PySCFabSim-release','simulation', 'gym'))
+sys.path.append(os.path.join(os.path.sep, 'projects','p078','p_htw_promentat','Heik_Reproduktion_2', 'simulation'))
+sys.path.append(os.path.join(os.path.sep, 'projects','p078','p_htw_promentat','Heik_Reproduktion_2', 'simulation', 'gym'))
 
 from classes import Machine, Route, Lot
 from dispatching.dm_lot_for_machine import LotForMachineDispatchManager
