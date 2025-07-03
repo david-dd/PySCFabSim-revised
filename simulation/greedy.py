@@ -1,7 +1,10 @@
 import os
 import sys
 #sys.path.append(os.path.join(os.path.sep, 'data','horse','ws','wiro085f-WsRodmann','Final_Version','PySCFabSim', 'simulation'))
-sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release-William-Rodmann','simulation'))
+#sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release-William-Rodmann','simulation'))
+sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','PySCFabSim','Projekt-Reproduktion','Mai-Session', 'PySCFabSim-release','simulation'))
+#sys.path.append(os.path.join('C:/','Users','David Heik','Desktop','Arbeit2024','PySCFabSim','Projekt-Reproduktion','Mai-Session', 'PySCFabSim-release','simulation', 'gym'))
+sys.path.append(os.path.join(os.path.sep, 'projects','p078','p_htw_promentat','Heik_Reproduktion_2', 'simulation'))
 from collections import defaultdict
 from datetime import datetime
 from typing import List
@@ -119,7 +122,7 @@ def get_lots_to_dispatch_by_machine(instance, ptuple_fcn, machine=None):
                     if machine:
                         lot.dedications.pop(d)
                         break
-        
+        # Das hier ist exterm wichtig, dass die LSSU-Regel eingehalten wird. 
         elif lot.actual_step.setup_needed != '' and machine.current_setup != lot.actual_step.setup_needed:
             machine = find_alternative_machine(instance, lots, machine)
         
@@ -179,7 +182,7 @@ def run_greedy():
     p.add_argument('--days', type=int)
     p.add_argument('--dispatcher', type=str)
     p.add_argument('--seed', type=int)
-    p.add_argument('--wandb', action='store_true', default=False)
+    p.add_argument('--wandb', action='store_true', default=True)
     p.add_argument('--chart', action='store_true', default=False)
     p.add_argument('--alg', type=str, default='l4m', choices=['l4m', 'm4l'])
     p.add_argument('--WIP', type=bool, default=True)
@@ -188,9 +191,9 @@ def run_greedy():
     p.add_argument('--batch_strat', type=str, default="Max", choices=['Max', 'Min', 'RoundRobin', 'Demand']) #Max,Min, RoundRobin, Demand
     a = p.parse_args()
     seed = random.randint(1, 10000)
-    a.dataset = 'SMT2020_HVLM'
+    a.dataset = 'SMT2020_HVLM' #'SMT2020_LVHM' #'SMT2020_HVLM'
     a.days = 730
-    a.dispatcher = 'fifo'
+    a.dispatcher = 'fifo' #'cr' #'fifo'
     a.seed = seed
     a.WIP = True 
     a.rpt_mode = False
@@ -233,13 +236,13 @@ def run_greedy():
         plugins.append(ChartPlugin())
     plugins.append(CostPlugin())
     instance = FileInstance(files, run_to, l4m, plugins, a.rpt_route, a.batch_strat)
-    if (a.WIP ==False or a.days > 365) and a.rpt_mode == False:
+    if (a.WIP == False or a.days > 365) and a.rpt_mode == False:
         instance.add_event(ResetEvent(31536000))
 
     dispatcher = dispatcher_map[a.dispatcher]
 
     sys.stderr.write('Seed: ' + str(a.seed) + '\n')
-    sys.stderr.write('Starting simulation with dispatching rule'+ a.dispatcher +'\n\n')
+    sys.stderr.write('Starting simulation with dispatching rule '+ a.dispatcher +'\n\n')
     sys.stderr.flush()
 
     while not instance.done:
@@ -267,7 +270,7 @@ def run_greedy():
     instance.finalize()
     interval = datetime.now() - start_time
     print(instance.current_time_days, ' days simulated in ', interval)
-    print_statistics(instance, a.days, a.dataset, a.dispatcher, method='greedy_seed' + str(a.seed), wip=a.WIP)
+    print_statistics(instance, a.days, a.dataset, a.dispatcher, method='greedy_seed' + str(a.seed), wip=a.WIP, seed=a.seed)
     
 
 def run_greedy_RL(dataset, RL_days, greedy_days, dispatcher, seed, wandb, chart, alg='l4m', rpt_mode=False, rpt_route=None, batch_strat='Demand'):

@@ -8,6 +8,7 @@ sys.path.insert(0, '.')
 
 
 def greedy():
+
     profile = False
     if profile:
         from pyinstrument import Profiler
