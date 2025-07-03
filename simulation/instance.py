@@ -1,14 +1,18 @@
 from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 import os
-import csv
+import sys
 
+import pandas as pd
+sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release-William-Rodmann','simulation'))
+sys.path.append(os.path.join('C:/','Users','willi','OneDrive','Documents','Studium','Diplomarbeit','Programm + Datengrundlage','PySCFabSim-release-William-Rodmann','simulation', 'gym'))
 from classes import Machine, Route, Lot
 from dispatching.dm_lot_for_machine import LotForMachineDispatchManager
 from dispatching.dm_machine_for_lot import MachineForLotDispatchManager
 from event_queue import EventQueue
 from events import MachineDoneEvent, LotDoneEvent, BreakdownEvent, ReleaseEvent
 from plugins.interface import IPlugin
+import pickle
 
 
 class Instance:
@@ -39,9 +43,12 @@ class Instance:
         self.active_lots: List[Lot] = []
         self.done_lots: List[Lot] = []
 
-        self.events = EventQueue()       
+        self.events = EventQueue()    
 
-        self.current_time = 0
+        #self.setup_per_timestep_when_needed = {}
+        self.counter_cqt_violated = 0
+
+        self.current_time = 0 
 
         for plugin in self.plugins:
             plugin.on_sim_init(self)
@@ -63,7 +70,10 @@ class Instance:
         process_until = []
         if len(self.events.arr) > 0:
             process_until.append(max(0, self.events.first.timestamp))
-        process_until.append(max(0, self.dispatchable_lots[0].release_at))
+        if len(self.dispatchable_lots) > 0:
+            process_until.append(max(0, self.dispatchable_lots[0].release_at))
+        else: 
+            process_until.append(0)
         return min(process_until)
     
     def move_event(self, ev):
@@ -138,15 +148,16 @@ class Instance:
             lot.waiting_time += self.current_time - lot.free_since
             if lot.actual_step.batch_max > 1:
                 lot.waiting_time_batching += self.current_time - lot.free_since
-            if lot.actual_step.cqt_for_step is not None:
-                lot.cqt_waiting = lot.actual_step.cqt_for_step
-                lot.cqt_deadline = lot.actual_step.cqt_time
-            if lot.actual_step.order == lot.cqt_waiting:
-                if lot.cqt_deadline < self.current_time:
-                    for plugin in self.plugins:
-                        plugin.on_cqt_violated(self, machine, lot)
-                lot.cqt_waiting = None
-                lot.cqt_deadline = None
+            # if lot.actual_step.cqt_for_step is not None: TODO: CQT handling, Deactivated for now
+            #     lot.cqt_waiting = lot.actual_step.cqt_for_step
+            #     #lot.cqt_deadline = self.current_time + lot.actual_step.cqt_time
+            #     lot.cqt_deadline = lot.actual_step.cqt_time
+            # if lot.actual_step.order == lot.cqt_waiting:
+            #     if lot.cqt_deadline < self.current_time:
+            #         for plugin in self.plugins:
+            #             plugin.on_cqt_violated(self, machine, lot)
+            #     lot.cqt_waiting = None
+            #     lot.cqt_deadline = None
         # compute times for lot and machine
         lot_time, machine_time, setup_time = self.get_times(self.setups, lots, machine)
         # compute per-piece preventive maintenance requirement
@@ -157,6 +168,7 @@ class Instance:
                 machine_time += s
                 machine.pieces_until_maintenance[i] = machine.piece_per_maintenance[i]
                 machine.pmed_time += s
+                machine.current_setup = ''
         # compute timebased preventive maintenance requirement
         look_ahead_time = self.current_time + machine_time + setup_time
         for event in self.events.arr:
@@ -206,6 +218,8 @@ class Instance:
             cascade_t_samp = lots[0].actual_step.cascading_time.sample()
         machine_time = cascade_t_samp + (machine.load_time + machine.unload_time if not machine.cascading else 0)
         new_setup = lots[0].actual_step.setup_needed
+        if new_setup != '':
+            self.setup_count_when_needed(machine, new_setup)
         if new_setup != '' and machine.current_setup != new_setup:
             if lots[0].actual_step.setup_time is not None:
                 setup_time = lots[0].actual_step.setup_time             # SetupTime für in der Route geplante Setups
@@ -264,3 +278,31 @@ class Instance:
                 sys.stderr.write(
                     f'\rDay {self.printed_days}===Throughput: {round(len(self.done_lots) / self.printed_days)}/day=')
                 sys.stderr.flush()
+
+    # def setup_count_when_needed(self, machine, setup_needed):
+    #     if self.current_time > 0:
+    #         #if self.current_time not in self.setup_per_timestep_when_needed[machine.family] or self.setup_count_when_needed == {}:
+    #             self.setup_per_timestep_when_needed[int(self.current_time)] = [setup_needed, 'Verfügbar',{machine.family: {}}, 'Nicht frei', {machine.family: {}}]
+    #             self.setup_per_timestep_when_needed[int(self.current_time)][2][machine.family]= {machine.current_setup: 1}
+    #             for machines in self.machines:
+    #                 if machines.idx != machine.idx:
+    #                     if self.free_machines[machines.idx] == True:
+    #                         if machines.family == machine.family:
+    #                             if machines.current_setup in self.setup_per_timestep_when_needed[int(self.current_time)][2][machine.family]:
+    #                                 self.setup_per_timestep_when_needed[int(self.current_time)][2][machine.family][machines.current_setup] += 1
+    #                             else:
+    #                                 self.setup_per_timestep_when_needed[int(self.current_time)][2][machine.family][machines.current_setup] =  1
+    #                     else:
+    #                         if machines.family == machine.family:
+    #                             if machines.current_setup in self.setup_per_timestep_when_needed[int(self.current_time)][4][machine.family]:
+    #                                 self.setup_per_timestep_when_needed[int(self.current_time)][4][machine.family][machines.current_setup] += 1
+    #                             else:
+    #                                 self.setup_per_timestep_when_needed[int(self.current_time)][4][machine.family][machines.current_setup] =  1
+
+
+
+    # def save_setup_when_needed(self):
+    #     with open('setup_when_needed.pkl', 'wb') as f:
+    #         pickle.dump(self.setup_per_timestep_when_needed, f)
+    
+                

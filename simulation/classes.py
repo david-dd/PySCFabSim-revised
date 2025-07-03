@@ -83,8 +83,9 @@ class Product:
 
 class Step:
 
-    def __init__(self, idx, pieces_per_lot, d):
+    def __init__(self, idx, pieces_per_lot, d, rpt_mode):
         self.idx = idx
+        self.rpt_mode = rpt_mode
         self.order = d['STEP']
         self.step_name = d['DESC']
         self.family = d['STNFAM']
@@ -113,11 +114,16 @@ class Step:
             else:
                 self.cascading_time = self.processing_time
         self.batching = d['PTPER'] == 'per_batch'
-        self.batch_min = 1 if d['BATCHMN'] == '' else int(d['BATCHMN'] / pieces_per_lot)
+        if self.rpt_mode:
+            self.batch_min = 1 if d['BATCHMN'] == '' else 1
+        else:
+            self.batch_min = 1 if d['BATCHMN'] == '' else int(d['BATCHMN'] / pieces_per_lot)
         self.batch_max = 1 if d['BATCHMX'] == '' else int(d['BATCHMX'] / pieces_per_lot)
         self.sampling_percent = 100 if d['StepPercent'] in ['', None] else float(d['StepPercent'])
         self.rework_percent = 0 if d['REWORK'] in ['', None] else float(d['REWORK'])
         
+        
+        #self.cqt_for_step = None if d['STEP_CQT']=='' else d['STEP_CQT']
         self.cqt_for_step = d['STEP_CQT'] if 'STEP_CQT' in d else None
         self.cqt_time = get_interval(d['CQT'], d['CQTUNITS']) if self.cqt_for_step is not None else None
 
@@ -134,10 +140,13 @@ class Step:
         return r.random.uniform(0, 100) <= self.sampling_percent
 
     def has_to_rework(self, lot_id):
-        if self.rework_percent == 0 or lot_id in self.reworked:
+        if self.rework_percent == 0: 
             return False
-        self.reworked[lot_id] = True
-        return r.random.uniform(0, 100) <= self.rework_percent
+        if r.random.uniform(0, 100) <= self.rework_percent: 
+            self.reworked[lot_id] = True
+            return True
+        return False 
+        #return r.random.uniform(0, 100) <= self.rework_percent 
 
 
 class Lot:
@@ -175,8 +184,8 @@ class Lot:
         self.processing_time = 0
         self.transport_time = 0
 
-        self.cqt_waiting = None
-        self.cqt_deadline = None
+        # self.cqt_waiting = None
+        # self.cqt_deadline = None
 
         self.ft = None
 
@@ -219,6 +228,6 @@ class Route:
 
 class FileRoute(Route):
 
-    def __init__(self, idx, pieces_per_lot, steps: List[Dict]):
-        steps = [Step(i, pieces_per_lot, d) for i, d in enumerate(steps)]
+    def __init__(self, idx, pieces_per_lot, steps: List[Dict], rpt_mode):
+        steps = [Step(i, pieces_per_lot, d, rpt_mode) for i, d in enumerate(steps)]
         super().__init__(idx, steps)
